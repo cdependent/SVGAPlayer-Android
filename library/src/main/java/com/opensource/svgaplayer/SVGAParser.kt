@@ -1,13 +1,10 @@
 package com.opensource.svgaplayer
 
-import android.app.Activity
 import android.content.Context
 import android.os.Handler
 import com.opensource.svgaplayer.proto.MovieEntity
-
 import org.json.JSONObject
 import java.io.*
-
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
@@ -25,7 +22,7 @@ class SVGAParser(private val context: Context) {
     interface ParseCompletion {
 
         fun onComplete(videoItem: SVGAVideoEntity)
-        fun onError()
+        fun onError(e: Exception? = null)
 
     }
 
@@ -80,7 +77,7 @@ class SVGAParser(private val context: Context) {
             }
         }
         fileDownloader.resume(url, {
-            val videoItem = parse(it, cacheKey(url)) ?: return@resume (Handler(context.mainLooper).post { callback.onError() } as? Unit ?: Unit)
+            val videoItem = parseData(it, cacheKey(url), callback) ?: return@resume (Handler(context.mainLooper).post { callback.onError() } as? Unit ?: Unit)
             Handler(context.mainLooper).post {
                 callback.onComplete(videoItem)
             }
@@ -93,7 +90,7 @@ class SVGAParser(private val context: Context) {
 
     fun parse(inputStream: InputStream, cacheKey: String, callback: ParseCompletion) {
         Thread({
-            val videoItem = parse(inputStream, cacheKey)
+            val videoItem = parseData(inputStream, cacheKey, callback)
             Thread({
                 if (videoItem != null) {
                     Handler(context.mainLooper).post {
@@ -109,14 +106,16 @@ class SVGAParser(private val context: Context) {
         }).start()
     }
 
-    fun parse(inputStream: InputStream, cacheKey: String): SVGAVideoEntity? {
+    fun parseData(inputStream: InputStream, cacheKey: String, callback: ParseCompletion): SVGAVideoEntity? {
         val bytes = readAsBytes(inputStream)
         if (bytes.size > 4 && bytes[0].toInt() == 80 && bytes[1].toInt() == 75 && bytes[2].toInt() == 3 && bytes[3].toInt() == 4) {
             synchronized(sharedLock, {
                 if (!cacheDir(cacheKey).exists()) {
                     try {
                         unzip(ByteArrayInputStream(bytes), cacheKey)
-                    } catch (e: Exception) { e.printStackTrace() }
+                    } catch (e: Exception) {
+                        callback.onError(e)
+                    }
                 }
             })
             try {
@@ -160,7 +159,7 @@ class SVGAParser(private val context: Context) {
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                callback.onError(e)
             }
         }
         else {
@@ -169,7 +168,7 @@ class SVGAParser(private val context: Context) {
                     return SVGAVideoEntity(MovieEntity.ADAPTER.decode(it), File(cacheKey))
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                callback.onError(e)
             }
         }
         return null
@@ -257,23 +256,19 @@ class SVGAParser(private val context: Context) {
     }
 
     private fun inflate(byteArray: ByteArray): ByteArray? {
-        try {
-            val inflater = Inflater()
-            inflater.setInput(byteArray, 0, byteArray.size)
-            val inflatedBytes = ByteArray(2048)
-            val inflatedOutputStream = ByteArrayOutputStream()
-            while (true) {
-                val count = inflater.inflate(inflatedBytes, 0, 2048)
-                if (count <= 0) {
-                    break
-                }
-                else {
-                    inflatedOutputStream.write(inflatedBytes, 0, count)
-                }
+        val inflater = Inflater()
+        inflater.setInput(byteArray, 0, byteArray.size)
+        val inflatedBytes = ByteArray(2048)
+        val inflatedOutputStream = ByteArrayOutputStream()
+        while (true) {
+            val count = inflater.inflate(inflatedBytes, 0, 2048)
+            if (count <= 0) {
+                break
+            } else {
+                inflatedOutputStream.write(inflatedBytes, 0, count)
             }
-            return inflatedOutputStream.toByteArray()
-        } catch (e: Exception) { e.printStackTrace(); }
-        return null
+        }
+        return inflatedOutputStream.toByteArray()
     }
 
     private fun unzip(inputStream: InputStream, cacheKey: String) {

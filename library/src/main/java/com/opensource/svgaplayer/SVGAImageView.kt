@@ -142,7 +142,7 @@ open class SVGAImageView : ImageView {
                                     }
                                 }
                             }
-                            override fun onError() { }
+                            override fun onError(e: Exception?) { }
                         })
                         return@Thread
                     }
@@ -157,7 +157,7 @@ open class SVGAImageView : ImageView {
                             }
                         }
                     }
-                    override fun onError() { }
+                    override fun onError(e: Exception?) { }
                 })
             }).start()
         }
