@@ -16,3 +16,27 @@ fun SVGAParser.safeParseUrl(url : String, callback: SVGAParser.ParseCompletion) 
         parse(result, callback)
     }
 }
+
+object SVGAHelper {
+//    fun getCCSVGAParser(context: Context) = SVGAParser(context).also {
+//        it.fileDownloader = object : SVGAParser.FileDownloader() {
+//            override fun resume(url: URL, complete: (inputStream: InputStream) -> Unit, failure: (e: Exception) -> Unit) {
+//                OkHttpUtils.get().url(url.toString()).build().execute(object: OkCallBack<Unit>() {
+//                    override fun parseNetworkResponse(response: Response?, id: Int) {
+//                        response?.let {
+//                            complete(it.body().byteStream())
+//                        }
+//                    }
+//
+//                    override fun onError(e: java.lang.Exception?, errorCode: Int) {
+//                        failure(e)
+//                    }
+//
+//                    override fun onResponse(response: Unit?, statusCode: Int) {
+//                    }
+//
+//                })
+//            }
+//        }
+//    }
+}

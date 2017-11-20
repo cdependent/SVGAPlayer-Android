@@ -7,10 +7,11 @@
     android:orientation="vertical"
     tools:context="selfdriven.ku.ccdemo.MainActivity">
 
-    <TextView
+    <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="40dp"
+        android:id="@+id/clickLoad"
         android:text="Hello World!"/>
 
     <com.opensource.svgaplayer.SVGAImageView

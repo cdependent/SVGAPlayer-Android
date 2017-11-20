@@ -14,17 +14,35 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val parser = SVGAParser(this)
-        parser.safeParseUrl(REMOTE_URL, object: SVGAParser.ParseCompletion {
+        clickLoad.setOnClickListener { loadSVGAResource() }
+//        SVGAHelper.getCCSVGAParser(this)
+//                .safeParseUrl(REMOTE_URL, object: SVGAParser.ParseCompletion {
+//            override fun onComplete(videoItem: SVGAVideoEntity) {
+//                Logger.d("load finish ${videoItem.toString()}")
+//                val drawable = SVGADrawable(videoItem)
+//                downloadedSVGAImage.setImageDrawable(drawable)
+//                downloadedSVGAImage.startAnimation()
+//            }
+//
+//            override fun onError(e: Exception?) {
+//                Logger.e("message", e)
+//            }
+//
+//        })
+    }
+
+    private fun loadSVGAResource() {
+        Logger.d("start load")
+        CCSVGAHelper.getParser(this).safeParseUrl(REMOTE_URL, object: SVGAParser.ParseCompletion {
             override fun onComplete(videoItem: SVGAVideoEntity) {
-                Logger.d("load finish ${videoItem.toString()}")
                 val drawable = SVGADrawable(videoItem)
                 downloadedSVGAImage.setImageDrawable(drawable)
+                downloadedSVGAImage.loops = 1
                 downloadedSVGAImage.startAnimation()
             }
 
             override fun onError(e: Exception?) {
-                Logger.e("message", e)
+                Logger.e("load svga error", e)
             }
 
         })

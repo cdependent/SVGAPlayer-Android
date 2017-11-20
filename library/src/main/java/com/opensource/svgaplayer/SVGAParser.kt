@@ -64,7 +64,9 @@ class SVGAParser(private val context: Context) {
             context.assets.open(assetsName)?.let {
                 parse(it, cacheKey("file:///assets/" + assetsName), callback)
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            callback.onError(e)
+        }
     }
 
     fun parse(url: URL, callback: ParseCompletion) {
@@ -83,7 +85,7 @@ class SVGAParser(private val context: Context) {
             }
         }, {
             Handler(context.mainLooper).post {
-                callback.onError()
+                callback.onError(it)
             }
         })
     }
@@ -168,9 +170,9 @@ class SVGAParser(private val context: Context) {
                     return SVGAVideoEntity(MovieEntity.ADAPTER.decode(it), File(cacheKey))
                 }
             } catch (e: Exception) {
-                callback.onError(e)
+                    callback.onError(e)
+                }
             }
-        }
         return null
     }
 

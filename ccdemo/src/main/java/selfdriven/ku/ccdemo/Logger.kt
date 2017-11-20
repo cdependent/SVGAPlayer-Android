@@ -8,14 +8,14 @@ import android.util.Log
 
 const val DEFAULT_TAG = "CC_DEMO"
 
-class Logger {
-    companion object {
-        fun d(msg: String, tag:String = DEFAULT_TAG) {
-            Log.d(tag, msg)
-        }
+object Logger {
+    @JvmOverloads
+    fun d(msg: String, tag: String = DEFAULT_TAG) {
+        Log.d(tag, msg)
+    }
 
-        fun e(msg: String, e: Exception?, tag : String = DEFAULT_TAG) {
-            Log.e(tag, msg, e);
-        }
+    @JvmOverloads
+    fun e(msg: String, e: Exception?, tag: String = DEFAULT_TAG) {
+        Log.e(tag, msg, e);
     }
 }
