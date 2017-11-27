@@ -232,6 +232,7 @@ open class SVGAImageView : ImageView {
 
     fun stopAnimation(clear: Boolean) {
         animator?.cancel()
+        animator?.removeAllListeners()
         animator?.removeAllUpdateListeners()
         (drawable as? SVGADrawable)?.let {
             it.cleared = clear
