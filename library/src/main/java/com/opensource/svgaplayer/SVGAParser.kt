@@ -2,6 +2,7 @@ package com.opensource.svgaplayer
 
 import android.content.Context
 import android.os.Handler
+import android.os.Looper
 import com.opensource.svgaplayer.proto.MovieEntity
 import org.json.JSONObject
 import java.io.*
@@ -25,6 +26,8 @@ class SVGAParser(private val context: Context) {
         fun onError(e: Exception? = null)
 
     }
+
+    val mUiHandler = Handler(Looper.getMainLooper())
 
     open class FileDownloader {
 
@@ -72,19 +75,22 @@ class SVGAParser(private val context: Context) {
     fun parse(url: URL, callback: ParseCompletion) {
         if (cacheDir(cacheKey(url)).exists()) {
             parseWithCacheKey(cacheKey(url))?.let {
-                Handler(context.mainLooper).post {
+                mUiHandler.post {
                     callback.onComplete(it)
                 }
                 return
             }
         }
         fileDownloader.resume(url, {
-            val videoItem = parseData(it, cacheKey(url), callback) ?: return@resume (Handler(context.mainLooper).post { callback.onError() } as? Unit ?: Unit)
-            Handler(context.mainLooper).post {
+            val videoItem = try { parseData(it, cacheKey(url)) } catch (e: Exception) {
+                mUiHandler.post{ callback.onError(e) }
+                null
+            } ?: return@resume
+            mUiHandler.post {
                 callback.onComplete(videoItem)
             }
         }, {
-            Handler(context.mainLooper).post {
+            mUiHandler.post {
                 callback.onError(it)
             }
         })
@@ -92,87 +98,68 @@ class SVGAParser(private val context: Context) {
 
     fun parse(inputStream: InputStream, cacheKey: String, callback: ParseCompletion) {
         Thread({
-            val videoItem = parseData(inputStream, cacheKey, callback)
-            Thread({
-                if (videoItem != null) {
-                    Handler(context.mainLooper).post {
-                        callback.onComplete(videoItem)
-                    }
-                }
-                else {
-                    Handler(context.mainLooper).post {
-                        callback.onError()
-                    }
-                }
-            }).start()
+            val videoItem = try { parseData(inputStream, cacheKey) } catch (e: Exception) {
+                mUiHandler.post{ callback.onError(e) }
+                null
+            } ?: return@Thread
+            mUiHandler.post {
+                callback.onComplete(videoItem)
+            }
         }).start()
     }
 
-    fun parseData(inputStream: InputStream, cacheKey: String, callback: ParseCompletion): SVGAVideoEntity? {
+    fun parseData(inputStream: InputStream, cacheKey: String): SVGAVideoEntity? {
         val bytes = readAsBytes(inputStream)
         if (bytes.size > 4 && bytes[0].toInt() == 80 && bytes[1].toInt() == 75 && bytes[2].toInt() == 3 && bytes[3].toInt() == 4) {
             synchronized(sharedLock, {
                 if (!cacheDir(cacheKey).exists()) {
-                    try {
-                        unzip(ByteArrayInputStream(bytes), cacheKey)
-                    } catch (e: Exception) {
-                        callback.onError(e)
-                    }
+                    unzip(ByteArrayInputStream(bytes), cacheKey)
                 }
             })
-            try {
-                val cacheDir = File(context.cacheDir.absolutePath + "/" + cacheKey + "/")
-                File(cacheDir, "movie.binary")?.takeIf { it.isFile }?.let { binaryFile ->
-                    try {
-                        FileInputStream(binaryFile)?.let {
-                            val videoItem = SVGAVideoEntity(MovieEntity.ADAPTER.decode(it), cacheDir)
-                            it.close()
-                            return videoItem
-                        }
-                    } catch (e: Exception) {
-                        cacheDir.delete()
-                        binaryFile.delete()
-                        throw e
+            val cacheDir = File(context.cacheDir.absolutePath + "/" + cacheKey + "/")
+            File(cacheDir, "movie.binary")?.takeIf { it.isFile }?.let { binaryFile ->
+                try {
+                    FileInputStream(binaryFile)?.let {
+                        val videoItem = SVGAVideoEntity(MovieEntity.ADAPTER.decode(it), cacheDir)
+                        it.close()
+                        return videoItem
                     }
+                } catch (e: Exception) {
+                    cacheDir.delete()
+                    binaryFile.delete()
+                    throw e
                 }
-                File(cacheDir, "movie.spec")?.takeIf { it.isFile }?.let { jsonFile ->
-                    try {
-                        FileInputStream(jsonFile)?.let { fileInputStream ->
-                            val byteArrayOutputStream = ByteArrayOutputStream()
-                            val buffer = ByteArray(2048)
-                            while (true) {
-                                val size = fileInputStream.read(buffer, 0, buffer.size)
-                                if (size == -1) {
-                                    break
-                                }
-                                byteArrayOutputStream.write(buffer, 0, size)
+            }
+            File(cacheDir, "movie.spec")?.takeIf { it.isFile }?.let { jsonFile ->
+                try {
+                    FileInputStream(jsonFile)?.let { fileInputStream ->
+                        val byteArrayOutputStream = ByteArrayOutputStream()
+                        val buffer = ByteArray(2048)
+                        while (true) {
+                            val size = fileInputStream.read(buffer, 0, buffer.size)
+                            if (size == -1) {
+                                break
                             }
-                            byteArrayOutputStream.toString()?.let {
-                                JSONObject(it)?.let {
-                                    fileInputStream.close()
-                                    return SVGAVideoEntity(it, cacheDir)
-                                }
+                            byteArrayOutputStream.write(buffer, 0, size)
+                        }
+                        byteArrayOutputStream.toString()?.let {
+                            JSONObject(it)?.let {
+                                fileInputStream.close()
+                                return SVGAVideoEntity(it, cacheDir)
                             }
                         }
-                    } catch (e: Exception) {
-                        cacheDir.delete()
-                        jsonFile.delete()
-                        throw e
                     }
+                } catch (e: Exception) {
+                    cacheDir.delete()
+                    jsonFile.delete()
+                    throw e
                 }
-            } catch (e: Exception) {
-                callback.onError(e)
+            }
+        } else {
+            inflate(bytes)?.let {
+                return SVGAVideoEntity(MovieEntity.ADAPTER.decode(it), File(cacheKey))
             }
         }
-        else {
-            try {
-                inflate(bytes)?.let {
-                    return SVGAVideoEntity(MovieEntity.ADAPTER.decode(it), File(cacheKey))
-                }
-            } catch (e: Exception) {
-                    callback.onError(e)
-                }
-            }
         return null
     }
 
