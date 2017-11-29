@@ -13,6 +13,10 @@ private var sharedDrawFilter = PaintFlagsDrawFilter(0, Paint.FILTER_BITMAP_FLAG 
 class SVGACanvasDrawer(videoItem: SVGAVideoEntity, val dynamicItem: SVGADynamicEntity) : SGVADrawer(videoItem) {
 
     var canvas: Canvas? = null
+    /**
+     * CENTER_CROP 时是否右对齐
+     */
+    var cropAlignRight = false
     private var ratio = 1.0f
     private var ratioX = false
     private val sharedPaint = Paint()
@@ -51,8 +55,9 @@ class SVGACanvasDrawer(videoItem: SVGAVideoEntity, val dynamicItem: SVGADynamicE
                 if (videoRatio > canvasRatio) {
                     ratio = (canvas.height / videoItem.videoSize.height).toFloat()
                     ratioX = false
-                    sharedContentTransform.postScale((canvas.height / videoItem.videoSize.height).toFloat(), (canvas.height / videoItem.videoSize.height).toFloat())
-                    sharedContentTransform.postTranslate(((canvas.width - videoItem.videoSize.width * (canvas.height / videoItem.videoSize.height)) / 2.0).toFloat(), 0.0f)
+                    sharedContentTransform.postScale(ratio, ratio)
+                    val translateX = (if (cropAlignRight) (canvas.width - videoItem.videoSize.width * ratio) else (canvas.width - videoItem.videoSize.width * ratio) / 2.0).toFloat()
+                    sharedContentTransform.postTranslate(translateX, 0.0f)
                 }
                 else {
                     ratio = (canvas.width / videoItem.videoSize.width).toFloat()

@@ -3,21 +3,16 @@ package com.opensource.svgaplayer
 import android.animation.Animator
 import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
 import android.os.Build
-import android.text.TextPaint
 import android.util.AttributeSet
-import android.view.Choreographer
 import android.view.View
-import android.view.ViewPropertyAnimator
 import android.view.animation.LinearInterpolator
 import android.widget.ImageView
 import java.net.URL
-import java.util.*
 
 /**
  * Created by cuiminghui on 2017/3/29.
@@ -46,6 +41,7 @@ class SVGADrawable(val videoItem: SVGAVideoEntity, val dynamicItem: SVGADynamicE
         }
 
     var scaleType: ImageView.ScaleType = ImageView.ScaleType.MATRIX
+    var cropAlignRight: Boolean = false
 
     private val drawer = SVGACanvasDrawer(videoItem, dynamicItem)
 
@@ -54,6 +50,7 @@ class SVGADrawable(val videoItem: SVGAVideoEntity, val dynamicItem: SVGADynamicE
             return
         }
         canvas?.let {
+            drawer.cropAlignRight = cropAlignRight
             drawer.canvas = it
             drawer.drawFrame(currentFrame, scaleType)
         }
@@ -88,6 +85,10 @@ open class SVGAImageView : ImageView {
     var fillMode: FillMode = FillMode.Forward
 
     var callback: SVGACallback? = null
+    /**
+     * CENTER_CROP 的时候是否右对齐
+     */
+    var cropAlignRight: Boolean = false
 
     private var animator: ValueAnimator? = null
 
@@ -175,6 +176,7 @@ open class SVGAImageView : ImageView {
         val drawable = drawable as? SVGADrawable ?: return
         drawable.cleared = false
         drawable.scaleType = scaleType
+        drawable.cropAlignRight = cropAlignRight
         drawable.videoItem?.let {
             var durationScale = 1.0
             val animator = ValueAnimator.ofInt(0, it.frames - 1)
