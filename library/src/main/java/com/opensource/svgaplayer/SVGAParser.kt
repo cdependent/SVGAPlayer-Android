@@ -23,11 +23,11 @@ class SVGAParser(private val context: Context) {
     interface ParseCompletion {
 
         fun onComplete(videoItem: SVGAVideoEntity)
-        fun onError(e: Exception? = null)
+        fun onError(e: Exception)
 
     }
 
-    val mUiHandler = Handler(Looper.getMainLooper())
+    private val mUiHandler = Handler(Looper.getMainLooper())
 
     open class FileDownloader {
 
