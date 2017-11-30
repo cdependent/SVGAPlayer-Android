@@ -1,27 +1,11 @@
 package com.example.ponycui_home.svgaplayer;
 
-import android.animation.ValueAnimator;
-import android.annotation.TargetApi;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
-import android.graphics.RectF;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.text.TextPaint;
-import android.util.AttributeSet;
-import android.view.View;
+import android.util.Log;
 
-import com.opensource.svgaplayer.SVGACallback;
-import com.opensource.svgaplayer.SVGACanvasDrawer;
 import com.opensource.svgaplayer.SVGADrawable;
 import com.opensource.svgaplayer.SVGADynamicEntity;
 import com.opensource.svgaplayer.SVGAImageView;
@@ -36,10 +20,6 @@ import java.net.URL;
 
 import kotlin.Unit;
 import kotlin.jvm.functions.Function1;
-import kotlin.jvm.functions.Function3;
-import okhttp3.CacheControl;
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -68,21 +48,26 @@ public class MainActivity extends AppCompatActivity {
     private void loadAnimation() {
         SVGAParser parser = new SVGAParser(this);
         resetDownloader(parser);
+//        String url = "http://c.cotton.netease.com/buckets/4NhQWd/files/QbyhJxp";
+//        String url = "https://github.com/yyued/SVGA-Samples/blob/master/angel.svga?raw=true";
+        String url = "http://c.cotton.netease.com/buckets/4NhQWd/files/QcAfUcK";
+
         try {
-            parser.parse(new URL("https://github.com/yyued/SVGA-Samples/blob/master/angel.svga?raw=true"), new SVGAParser.ParseCompletion() {
+            parser.parse(new URL(url), new SVGAParser.ParseCompletion() {
                 @Override
                 public void onComplete(@NotNull SVGAVideoEntity videoItem) {
-                    SVGADrawable drawable = new SVGADrawable(videoItem);
+                    SVGADynamicEntity entity = new SVGADynamicEntity();
+                    SVGADrawable drawable = new SVGADrawable(videoItem, entity);
                     testView.setImageDrawable(drawable);
                     testView.startAnimation();
                 }
                 @Override
-                public void onError() {
-
+                public void onError(Exception e) {
+                    Log.e("TAG", "hehe", e);
                 }
             });
         } catch (Exception e) {
-            System.out.print(true);
+            Log.e("TAG", "hehe", e);
         }
     }
 
