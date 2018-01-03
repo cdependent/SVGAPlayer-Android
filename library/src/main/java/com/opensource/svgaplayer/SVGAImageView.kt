@@ -192,7 +192,7 @@ open class SVGAImageView : ImageView {
             } catch (e: Exception) {}
             animator.interpolator = LinearInterpolator()
             animator.duration = (it.frames * (1000 / it.FPS) / durationScale).toLong()
-            animator.repeatCount = if (loops <= 0) 99999 else loops - 1
+            animator.repeatCount = if (loops < 0) ValueAnimator.INFINITE else loops - 1
             animator.addUpdateListener {
                 drawable.currentFrame = animator.animatedValue as Int
                 callback?.onStep(drawable.currentFrame, ((drawable.currentFrame + 1).toDouble() / drawable.videoItem.frames.toDouble()))
