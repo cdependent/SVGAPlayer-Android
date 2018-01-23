@@ -119,8 +119,8 @@ open class SVGAImageView : ImageView {
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        animator?.cancel()
         animator?.removeAllListeners()
+        animator?.cancel()
         animator?.removeAllUpdateListeners()
     }
 
